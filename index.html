@@ -1,0 +1,1229 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的小花园</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23c9d8b8'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+    background: #faf6ef; color: #5a4a3a; min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    transition: background 1s ease;
+  }
+  body.weather-rainy { background: #e8eef2; }
+  body.weather-hot { background: #f5e8d8; }
+  body.weather-windy { background: #e8eef0; }
+  body.weather-cloudy { background: #eef0ee; }
+  body.weather-frost { background: #e4edf3; }
+  body.weather-hail { background: #e0e8ee; }
+  body.weather-storm { background: #dde4ea; }
+
+  body::before {
+    content: ''; position: fixed; top: 0; left: 0; right: 0; height: 300px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(243,230,207,0.6) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .wrap {
+    position: relative; max-width: 720px; margin: 0 auto;
+    padding: 28px 20px 50px;
+  }
+
+  header { text-align: center; margin-bottom: 14px; }
+  header h1 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 24px; font-weight: 500; color: #4a3d30; letter-spacing: 2px;
+  }
+  header .sub { font-size: 12px; color: #a08c72; margin-top: 6px; letter-spacing: 2px; }
+
+  .env {
+    display: flex; justify-content: center; gap: 10px; margin: 14px 0 18px;
+    flex-wrap: wrap;
+  }
+  .env-chip {
+    background: rgba(255,255,255,0.7);
+    border: 1px solid #e8dcc8;
+    border-radius: 16px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    color: #6b5540;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .env-chip b { color: #8a6f4e; font-weight: 500; }
+
+  .garden {
+    background: linear-gradient(180deg, #f5efe2 0%, #e8f0dc 100%);
+    border-radius: 24px;
+    padding: 20px;
+    border: 1px solid #e5d9bf;
+    text-align: center;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    min-height: 420px;
+  }
+
+  .fx { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .fx span { position: absolute; display: block; }
+  .fx.rain span {
+    width: 1.5px; height: 14px;
+    background: rgba(127,168,212,0.5);
+    border-radius: 1px;
+    animation: fall 0.9s linear infinite;
+  }
+  .fx.storm span {
+    width: 2px; height: 22px;
+    background: rgba(100,130,170,0.6);
+    animation: fall 0.5s linear infinite;
+  }
+  @keyframes fall {
+    from { transform: translateY(-20px); opacity: 0; }
+    30% { opacity: 1; }
+    to { transform: translateY(380px); opacity: 0; }
+  }
+  .fx.snow span {
+    width: 6px; height: 6px;
+    background: rgba(255,255,255,0.9);
+    border-radius: 50%;
+    animation: snowfall linear infinite;
+  }
+  @keyframes snowfall {
+    from { transform: translateY(-20px) translateX(0); opacity: 0; }
+    20% { opacity: 0.9; }
+    to { transform: translateY(400px) translateX(30px); opacity: 0.3; }
+  }
+  .fx.hail span {
+    width: 5px; height: 5px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 2px rgba(150,180,210,0.6);
+    animation: hailfall 0.6s linear infinite;
+  }
+  @keyframes hailfall {
+    from { transform: translateY(-20px); opacity: 0; }
+    30% { opacity: 1; }
+    to { transform: translateY(380px); opacity: 0.4; }
+  }
+
+  .plant-name {
+    font-family: "Noto Serif SC", serif;
+    font-size: 19px; color: #6b5540;
+    position: relative; z-index: 2;
+  }
+
+  .pot-wrap {
+    height: 240px;
+    display: flex; align-items: flex-end; justify-content: center;
+    position: relative; z-index: 2;
+  }
+  .pot-wrap svg { height: 230px; transition: transform 0.5s ease, filter 0.8s ease; }
+  @keyframes sway {
+    0%,100% { transform: rotate(0); }
+    25% { transform: rotate(-2.5deg); }
+    75% { transform: rotate(2.5deg); }
+  }
+  .pot-wrap.sway svg { animation: sway 0.9s ease; transform-origin: bottom center; }
+  .pot-wrap.thirsty svg { transform: rotate(4deg); filter: sepia(0.15); }
+  .pot-wrap.droopy svg { transform: rotate(-4deg) scaleY(0.94); filter: brightness(0.95); }
+  .pot-wrap.soil-ok svg { filter: saturate(0.85); }
+  .pot-wrap.soil-bad svg { filter: saturate(0.5) sepia(0.2); transform: scaleY(0.96); }
+  .pot-wrap.frost svg { filter: hue-rotate(180deg) saturate(0.8) brightness(1.1); }
+  .pot-wrap.hurt svg { transform: rotate(6deg); filter: sepia(0.3) brightness(0.9); }
+  .pot-wrap.bloom svg { filter: drop-shadow(0 0 8px rgba(240,200,180,0.5)); }
+  .pot-wrap.wilt svg { filter: sepia(0.5) saturate(0.6) brightness(0.9); transform: rotate(8deg) scaleY(0.9); }
+  .pot-wrap.dead svg { filter: grayscale(1) sepia(0.6) brightness(0.7); transform: scaleY(0.85); opacity: 0.7; }
+
+  .pest-dots { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+  .pest-dots span {
+    position: absolute; width: 5px; height: 5px;
+    background: #d46060; border-radius: 50%;
+    opacity: 0.8;
+  }
+
+  .actions {
+    margin-top: 10px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    position: relative; z-index: 2;
+  }
+  .btn {
+    border: none; padding: 11px 24px; border-radius: 22px;
+    font-size: 13.5px; cursor: pointer; font-family: inherit;
+    letter-spacing: 2px; transition: all 0.25s ease;
+  }
+  .btn-water {
+    background: #7fa8d4; color: #fff;
+    box-shadow: 0 4px 12px rgba(100,140,190,0.3);
+  }
+  .btn-water:hover { background: #6b95c2; transform: translateY(-1px); }
+  .btn-water:active { transform: scale(0.95); }
+  .btn-seed {
+    background: #8aa876; color: #fff;
+    box-shadow: 0 4px 12px rgba(120,150,100,0.3);
+  }
+  .btn-seed:hover { background: #7a9a66; transform: translateY(-1px); }
+  .btn-reset {
+    background: transparent; color: #a08c72;
+    border: 1px solid #d4c4a8;
+  }
+
+  .whisper {
+    text-align: center;
+    font-family: "Noto Serif SC", serif;
+    font-size: 14px; color: #7a6848;
+    min-height: 24px; margin-top: 14px; font-style: italic;
+    opacity: 0; transition: opacity 0.6s ease;
+    position: relative; z-index: 2;
+  }
+  .whisper.show { opacity: 1; }
+
+  footer {
+    text-align: center; margin-top: 20px;
+    font-size: 11px; color: #b0a080; letter-spacing: 2px;
+  }
+
+  /* ===== 首页 ===== */
+  #splash {
+    position: fixed; inset: 0; z-index: 100;
+    background: linear-gradient(135deg, #faf6ef 0%, #e8f0dc 50%, #f3ecdc 100%);
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 1s ease, transform 1s ease;
+    overflow: hidden;
+  }
+  #splash .blob {
+    position: absolute; border-radius: 50%; filter: blur(80px);
+    pointer-events: none;
+  }
+  #splash .blob-green {
+    width: 380px; height: 380px; background: rgba(180,210,160,0.5);
+    top: -80px; right: -80px;
+  }
+  #splash .blob-cream {
+    width: 320px; height: 320px; background: rgba(245,225,190,0.5);
+    bottom: -60px; left: -60px;
+  }
+  #splash.hidden { opacity: 0; transform: scale(1.05); pointer-events: none; }
+
+  .splash-inner {
+    position: relative; z-index: 2;
+    text-align: center;
+    max-width: 400px; padding: 20px;
+  }
+  .splash-item {
+    opacity: 0; transform: translateY(15px) scale(0.98);
+    transition: opacity 1.5s ease, transform 1.5s ease;
+  }
+  .splash-item.in { opacity: 1; transform: translateY(0) scale(1); }
+
+  .leaf-icon {
+    width: 76px; height: 76px; margin: 0 auto 20px;
+  }
+  .splash-title {
+    font-family: "Noto Serif SC", serif;
+    font-size: 30px; color: #4a5a48;
+    letter-spacing: 6px; margin-bottom: 10px;
+  }
+  .splash-sub {
+    font-size: 12px; color: #8aa08a; letter-spacing: 8px;
+    margin-bottom: 18px;
+  }
+  .splash-line {
+    width: 42px; height: 1px; background: #a8bfa0;
+    margin: 0 auto 28px;
+  }
+  .splash-buttons {
+    display: flex; flex-direction: column; gap: 12px;
+    align-items: center; margin-bottom: 40px;
+  }
+  .btn-start {
+    background: #8aa876; color: #fff;
+    border: none; padding: 13px 44px; border-radius: 26px;
+    font-size: 14px; letter-spacing: 6px; cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 6px 18px rgba(138,168,118,0.35);
+    transition: all 0.3s ease;
+  }
+  .btn-start:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(138,168,118,0.45); }
+  .btn-start:active { transform: scale(0.97); }
+  .btn-tips {
+    background: transparent; color: #8aa08a;
+    border: 1px solid #a8bfa0; padding: 10px 32px; border-radius: 22px;
+    font-size: 13px; letter-spacing: 4px; cursor: pointer;
+    font-family: inherit;
+    transition: all 0.3s ease;
+  }
+  .btn-tips:hover { background: rgba(168,191,160,0.12); border-color: #8aa08a; }
+  .btn-tips:active { transform: scale(0.97); }
+
+  .splash-contact {
+    position: absolute; bottom: 24px; left: 0; right: 0;
+    text-align: center; font-size: 11px; color: #b0b8a8;
+    letter-spacing: 1px;
+  }
+  .splash-contact b { color: #8a9a80; font-weight: 500; }
+
+  /* ===== Tips 弹层 ===== */
+  #tipsModal {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(60,70,60,0.45);
+    backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.85s ease;
+  }
+  #tipsModal.show { opacity: 1; pointer-events: auto; }
+  .tips-card {
+    background: #fdfaf3;
+    border-radius: 20px;
+    padding: 32px 28px;
+    max-width: 360px; width: 90%;
+    max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(60,70,60,0.2);
+    transform: translateY(20px);
+    transition: transform 0.85s ease;
+  }
+  #tipsModal.show .tips-card { transform: translateY(0); }
+  .tips-card h2 {
+    font-family: "Noto Serif SC", serif;
+    font-size: 18px; color: #4a5a48;
+    letter-spacing: 4px; margin-bottom: 20px;
+    text-align: center; font-weight: 500;
+  }
+  .tips-card ul { list-style: none; }
+  .tips-card li {
+    position: relative; padding-left: 16px;
+    font-size: 13.5px; line-height: 1.9; color: #6a6a5a;
+    margin-bottom: 12px;
+  }
+  .tips-card li::before {
+    content: ''; position: absolute; left: 0; top: 10px;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #a8bfa0;
+  }
+  .tips-card li b { color: #4a5a48; font-weight: 500; }
+  .btn-got {
+    width: 100%; margin-top: 16px;
+    background: #c9d4c0; color: #4a5a48;
+    border: none; padding: 11px; border-radius: 12px;
+    font-size: 13px; letter-spacing: 4px; cursor: pointer;
+    font-family: inherit;
+    transition: background 0.25s ease;
+  }
+  .btn-got:hover { background: #b8c8b0; }
+
+  /* ===== 结算弹窗 ===== */
+  #endModal {
+    position: fixed; inset: 0; z-index: 150;
+    background: rgba(60,70,60,0.4);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.8s ease;
+    padding: 20px;
+  }
+  #endModal.show { opacity: 1; pointer-events: auto; }
+  .end-card {
+    background: #fdfaf3;
+    border-radius: 20px;
+    padding: 40px 36px;
+    max-width: 440px; width: 100%;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(60,70,60,0.2);
+    transform: translateY(20px);
+    transition: transform 0.8s ease;
+    font-family: "Noto Serif SC", serif;
+    text-wrap: pretty;
+    word-break: keep-all;
+    line-break: strict;
+  }
+  #endModal.show .end-card { transform: translateY(0); }
+  .end-title {
+    font-size: 19px; color: #4a5a48;
+    text-align: center; line-height: 1.8;
+    margin-bottom: 1.4em; font-weight: 500;
+    letter-spacing: 1px;
+  }
+  .end-quote {
+    font-size: 13.5px; color: #7a6e58;
+    line-height: 2.1; font-style: italic;
+    padding: 14px 18px;
+    margin: 1.8em 12px;
+    border-left: 3px solid #9eb090;
+    background: rgba(168,180,150,0.12);
+    white-space: pre-line;
+    text-align: left;
+  }
+  .end-body {
+    font-size: 14.5px; color: #5a5040;
+    line-height: 2.1;
+    margin: 0 4px;
+    text-align: left;
+  }
+  .end-end {
+    font-size: 13.5px; color: #8a7a60;
+    text-align: center;
+    margin: 2em 0 0.6em;
+    letter-spacing: 1px;
+    line-height: 1.9;
+  }
+  .end-actions {
+    margin-top: 2.2em; display: flex; justify-content: center; gap: 10px;
+  }
+
+  @media (max-width: 500px) {
+    .pot-wrap { height: 200px; }
+    .pot-wrap svg { height: 190px; }
+    .garden { min-height: 380px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 首页 ===== -->
+<div id="splash">
+  <div class="blob blob-green"></div>
+  <div class="blob blob-cream"></div>
+  <div class="splash-inner">
+    <div class="splash-item">
+      <svg class="leaf-icon" viewBox="0 0 76 76" fill="none">
+        <path d="M38 62 C20 50 14 32 22 16 C40 20 56 32 56 48 C56 56 48 62 38 62 Z" fill="#a8c89a"/>
+        <path d="M38 62 C38 48 38 32 40 20" stroke="#7a9a6e" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M38 48 L30 42 M38 40 L32 34 M38 32 L34 27" stroke="#7a9a6e" stroke-width="1" stroke-linecap="round"/>
+        <circle cx="52" cy="20" r="3" fill="#e8d080"/>
+      </svg>
+    </div>
+    <div class="splash-item splash-title">我的小花园</div>
+    <div class="splash-item splash-sub">看它，别急</div>
+    <div class="splash-item splash-line"></div>
+    <div class="splash-item splash-buttons">
+      <button class="btn-start" id="startBtn">开始游玩</button>
+      <button class="btn-tips" id="tipsBtn">小 Tips</button>
+    </div>
+  </div>
+  <div class="splash-contact splash-item">联系 · QQ：<b>3411947792@qq.com</b></div>
+</div>
+
+<!-- ===== Tips 弹层 ===== -->
+<div id="tipsModal">
+  <div class="tips-card">
+    <h2>小 Tips</h2>
+    <ul>
+      <li>这盆花<b>没有进度条</b>。全靠你看叶子的姿态、颜色，和土的深浅。</li>
+      <li>土发白了、叶子软了，再浇水。一次浇 <b>22 点</b>。</li>
+      <li>雨天不用浇，它自己会接。<b>大风和高温</b>要盯紧些，水跑得快。</li>
+      <li>每种植物都有自己的<b>舒适水分区间</b>，多养几局就熟了。</li>
+      <li>土壤也挑人。<b>仙人掌、多肉</b>喜欢沙质土，<b>兰花、鸢尾</b>偏爱腐殖土。</li>
+      <li>养死了不要紧。换一颗种子，就是新的一局。</li>
+    </ul>
+    <button class="btn-got" id="gotBtn">知道啦</button>
+  </div>
+</div>
+
+<!-- ===== 结算弹窗 ===== -->
+<div id="endModal">
+  <div class="end-card">
+    <div class="end-title" id="endTitle"></div>
+    <div class="end-quote" id="endQuote" style="display:none"></div>
+    <div class="end-body" id="endBody"></div>
+    <div class="end-end" id="endEnd"></div>
+    <div class="end-actions">
+      <button class="btn btn-seed" id="endAgainBtn">换一颗种子</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 游戏主体 ===== -->
+<div class="wrap">
+  <header>
+    <h1>我的小花园</h1>
+    <div class="sub">看看它，再决定</div>
+  </header>
+
+  <div class="env" id="env"></div>
+
+  <div class="garden">
+    <div class="fx" id="fx"></div>
+    <div class="pest-dots" id="pestDots" style="display:none"></div>
+    <div class="plant-name" id="pname">—</div>
+    <div class="pot-wrap" id="potWrap"></div>
+
+    <div class="actions">
+      <button class="btn btn-water" id="waterBtn">浇 水</button>
+      <button class="btn btn-seed" id="seedBtn">换一颗种子</button>
+      <button class="btn btn-reset" id="resetBtn">挪一挪</button>
+    </div>
+
+    <div class="whisper" id="whisper"></div>
+  </div>
+
+  <footer>它不会说话，但你看得懂</footer>
+</div>
+
+<script>
+  // ===== 花盆 =====
+  const pot = `
+    <ellipse cx="100" cy="195" rx="46" ry="6" fill="#d4b896"/>
+    <path d="M64 195 L74 155 L126 155 L136 195 Z" fill="#c9a87c" stroke="#a88860" stroke-width="1.5"/>
+    <rect x="69" y="149" width="62" height="8" rx="3" fill="#b89468"/>
+  `;
+  const sprout = `
+    <path d="M100 155 Q100 135 100 118" stroke="#7a9a5e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="90" cy="123" rx="9" ry="4.5" fill="#9eb58a" transform="rotate(-30 90 123)"/>
+    <ellipse cx="110" cy="123" rx="9" ry="4.5" fill="#9eb58a" transform="rotate(30 110 123)"/>
+  `;
+  const seedStage = `<ellipse cx="100" cy="158" rx="7" ry="4" fill="#8a6f4e"/>`;
+
+  // ===== 8 种植物 =====
+  const plants = {
+    cactus: {
+      name: '仙人掌', soils: ['sand'], comfort: [20, 50], evapo: 0.10,
+      mature: `
+        <path d="M88 155 L88 95 Q88 80 100 80 Q112 80 112 95 L112 155 Z" fill="#7fb08a"/>
+        <path d="M94 85 L94 155" stroke="#6a9a76" stroke-width="1"/>
+        <path d="M100 82 L100 155" stroke="#6a9a76" stroke-width="1"/>
+        <path d="M106 85 L106 155" stroke="#6a9a76" stroke-width="1"/>
+        <path d="M88 130 Q70 130 70 110 L70 100 Q70 92 78 92 Q86 92 86 100 L86 120" fill="#8ec09a"/>
+        <path d="M112 140 Q130 140 130 120 L130 112 Q130 104 122 104 Q114 104 114 112 L114 130" fill="#8ec09a"/>
+      `,
+      bloom: `
+        <path d="M88 155 L88 95 Q88 80 100 80 Q112 80 112 95 L112 155 Z" fill="#7fb08a"/>
+        <path d="M88 130 Q70 130 70 110 L70 100 Q70 92 78 92 Q86 92 86 100 L86 120" fill="#8ec09a"/>
+        <g transform="translate(100 74)">
+          <circle cx="0" cy="-9" r="7" fill="#f0a8b8"/>
+          <circle cx="8" cy="-2" r="7" fill="#f0a8b8"/>
+          <circle cx="-8" cy="-2" r="7" fill="#f0a8b8"/>
+          <circle cx="0" cy="0" r="4" fill="#f0d080"/>
+        </g>
+      `
+    },
+    succulent: {
+      name: '多肉', soils: ['sand'], comfort: [25, 55], evapo: 0.12,
+      mature: `
+        <ellipse cx="100" cy="145" rx="26" ry="8" fill="#a8c8b8"/>
+        <ellipse cx="80" cy="140" rx="14" ry="6" fill="#98bcac" transform="rotate(-18 80 140)"/>
+        <ellipse cx="120" cy="140" rx="14" ry="6" fill="#98bcac" transform="rotate(18 120 140)"/>
+        <ellipse cx="100" cy="126" rx="10" ry="6" fill="#c8e0d4"/>
+      `,
+      bloom: `
+        <ellipse cx="100" cy="145" rx="26" ry="8" fill="#a8c8b8"/>
+        <ellipse cx="80" cy="140" rx="14" ry="6" fill="#98bcac" transform="rotate(-18 80 140)"/>
+        <ellipse cx="120" cy="140" rx="14" ry="6" fill="#98bcac" transform="rotate(18 120 140)"/>
+        <path d="M100 118 Q100 100 102 92" stroke="#98bcac" stroke-width="2" fill="none"/>
+        <circle cx="102" cy="88" r="5" fill="#f8d8e0"/>
+      `
+    },
+    mother: {
+      name: '不死鸟', soils: ['sand','loam','clay','humus'], comfort: [30, 70], evapo: 0.22,
+      mature: `
+        <path d="M100 155 L100 80" stroke="#7a9a5e" stroke-width="3"/>
+        <ellipse cx="85" cy="100" rx="12" ry="5" fill="#9eb58a" transform="rotate(-25 85 100)"/>
+        <ellipse cx="115" cy="100" rx="12" ry="5" fill="#9eb58a" transform="rotate(25 115 100)"/>
+        <ellipse cx="85" cy="125" rx="12" ry="5" fill="#9eb58a" transform="rotate(-25 85 125)"/>
+        <ellipse cx="115" cy="125" rx="12" ry="5" fill="#9eb58a" transform="rotate(25 115 125)"/>
+      `,
+      bloom: `
+        <path d="M100 155 L100 80" stroke="#7a9a5e" stroke-width="3"/>
+        <ellipse cx="85" cy="100" rx="12" ry="5" fill="#9eb58a" transform="rotate(-25 85 100)"/>
+        <ellipse cx="115" cy="100" rx="12" ry="5" fill="#9eb58a" transform="rotate(25 115 100)"/>
+        <g transform="translate(100 72)">
+          <circle r="4" fill="#f0d8b8"/>
+          <circle cx="-4" cy="2" r="3" fill="#f0d8b8"/>
+          <circle cx="4" cy="2" r="3" fill="#f0d8b8"/>
+        </g>
+      `
+    },
+    rose: {
+      name: '月季', soils: ['loam','humus'], comfort: [50, 85], evapo: 0.4,
+      mature: `
+        <path d="M100 155 Q100 120 100 85" stroke="#6b8a55" stroke-width="3" fill="none"/>
+        <ellipse cx="84" cy="125" rx="9" ry="4" fill="#8aa876" transform="rotate(-25 84 125)"/>
+        <ellipse cx="116" cy="135" rx="9" ry="4" fill="#8aa876" transform="rotate(25 116 135)"/>
+        <circle cx="100" cy="82" r="6" fill="#d48098"/>
+      `,
+      bloom: `
+        <path d="M100 155 Q100 120 100 85" stroke="#6b8a55" stroke-width="3" fill="none"/>
+        <ellipse cx="84" cy="125" rx="9" ry="4" fill="#8aa876" transform="rotate(-25 84 125)"/>
+        <g transform="translate(100 76)">
+          <circle r="14" fill="#d48098"/>
+          <circle r="10" fill="#e898a8"/>
+          <circle r="6" fill="#f0b8c0"/>
+        </g>
+      `
+    },
+    orchid: {
+      name: '兰花', soils: ['humus'], comfort: [40, 70], evapo: 0.25,
+      mature: `
+        <path d="M85 155 Q80 120 75 90" stroke="#8aa876" stroke-width="2.5" fill="none"/>
+        <path d="M115 155 Q120 125 125 100" stroke="#8aa876" stroke-width="2.5" fill="none"/>
+        <path d="M80 155 Q78 130 75 120 Q82 130 84 155 Z" fill="#9eb58a"/>
+        <path d="M110 155 Q112 130 115 120 Q108 132 106 155 Z" fill="#9eb58a"/>
+      `,
+      bloom: `
+        <path d="M85 155 Q80 120 75 90" stroke="#8aa876" stroke-width="2.5" fill="none"/>
+        <g transform="translate(78 70)">
+          <circle cx="-7" cy="0" r="6" fill="#c9b8e0"/>
+          <circle cx="7" cy="0" r="6" fill="#c9b8e0"/>
+          <circle cx="0" cy="-7" r="6" fill="#d4c4e8"/>
+          <circle cx="0" cy="0" r="2.5" fill="#f0d080"/>
+        </g>
+      `
+    },
+    bougainvillea: {
+      name: '三角梅', soils: ['loam'], comfort: [30, 65], evapo: 0.3,
+      mature: `
+        <path d="M100 155 Q85 120 65 100" stroke="#7a9a5e" stroke-width="2.5" fill="none"/>
+        <path d="M100 155 Q115 120 135 100" stroke="#7a9a5e" stroke-width="2.5" fill="none"/>
+        <path d="M100 155 L100 95" stroke="#7a9a5e" stroke-width="2.5" fill="none"/>
+      `,
+      bloom: `
+        <path d="M100 155 Q85 120 65 100" stroke="#7a9a5e" stroke-width="2.5" fill="none"/>
+        <path d="M100 155 Q115 120 135 100" stroke="#7a9a5e" stroke-width="2.5" fill="none"/>
+        <g transform="translate(65 92)"><polygon points="0,-14 8,6 -8,6" fill="#e58a9a"/></g>
+        <g transform="translate(135 92)"><polygon points="0,-14 8,6 -8,6" fill="#e58a9a"/></g>
+        <g transform="translate(100 80)"><polygon points="0,-16 9,7 -9,7" fill="#f0a8b8"/></g>
+      `
+    },
+    plum: {
+      name: '梅花', soils: ['loam','sand'], comfort: [35, 65], evapo: 0.25,
+      mature: `
+        <path d="M100 155 Q95 120 100 90 Q108 78 118 72" stroke="#8a6f55" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <ellipse cx="82" cy="120" rx="5" ry="3" fill="#8aa876" transform="rotate(-20 82 120)"/>
+      `,
+      bloom: `
+        <path d="M100 155 Q95 120 100 90 Q108 78 118 72" stroke="#8a6f55" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+        <g transform="translate(118 68)"><circle r="6" fill="#f0c8d0"/><circle r="2.5" fill="#e8d080"/></g>
+        <g transform="translate(100 88)"><circle r="5.5" fill="#f0c8d0"/><circle r="2.2" fill="#e8d080"/></g>
+      `
+    },
+    iris: {
+      name: '鸢尾', soils: ['loam','humus'], comfort: [55, 85], evapo: 0.38,
+      mature: `
+        <path d="M80 155 L88 95 L92 155 Z" fill="#7a9a5e"/>
+        <path d="M96 155 L100 85 L104 155 Z" fill="#8aa876"/>
+        <path d="M108 155 L114 95 L118 155 Z" fill="#7a9a5e"/>
+      `,
+      bloom: `
+        <path d="M80 155 L88 95 L92 155 Z" fill="#7a9a5e"/>
+        <path d="M96 155 L100 85 L104 155 Z" fill="#8aa876"/>
+        <path d="M108 155 L114 95 L118 155 Z" fill="#7a9a5e"/>
+        <g transform="translate(100 78)">
+          <ellipse cx="-9" cy="-2" rx="7" ry="5" fill="#c9b8e0"/>
+          <ellipse cx="9" cy="-2" rx="7" ry="5" fill="#c9b8e0"/>
+          <ellipse cx="0" cy="-7" rx="6" ry="6" fill="#d4c4e8"/>
+        </g>
+      `
+    }
+  };
+
+  // ===== 天气 =====
+  const weathers = {
+    sunny:  { name: '晴',   ico: '☀️', evapo: 1.4 },
+    cloudy: { name: '阴',   ico: '☁️', evapo: 0.6 },
+    rainy:  { name: '小雨', ico: '🌧️', evapo: 0.3, rain: 15 },
+    windy:  { name: '大风', ico: '💨', evapo: 2.0 },
+    hot:    { name: '高温', ico: '🔥', evapo: 2.5 },
+    frost:  { name: '冰雪', ico: '❄️', evapo: 0, snow: 20, frozen: true },
+    hail:   { name: '冰雹', ico: '🧊', evapo: 0.5, hail: 15, hurtChance: true },
+    storm:  { name: '暴雨', ico: '⛈️', evapo: 0.2, storm: 30, flood: true },
+    pest:   { name: '虫病', ico: '🐛', evapo: 0.8, pest: true },
+    hurt:   { name: '受损', ico: '🩹', evapo: 0.8, hurt: true }
+  };
+
+  const soils = {
+    sand:  { name: '沙质土', ico: '🏜️', evapo: 1.4 },
+    loam:  { name: '壤土',   ico: '🟫', evapo: 1.0 },
+    clay:  { name: '黏土',   ico: '⬜', evapo: 0.5 },
+    humus: { name: '腐殖土', ico: '🍂', evapo: 0.8 }
+  };
+
+  // ===== 死亡故事：植物 × 死因 =====
+  // 死因键：dry / wet / frozen / pest / hurt / wilt
+  const deathStories = {
+    cactus: {
+      dry: {
+        title: '它把花举向了高空，然后放下了。',
+        quote: '马达加斯加诗人雷倍里伏罗写过仙人掌：“一只只熔解的手 / 将花朵举向高空—— / 一只只无指的手 / 在风中屹然不动。”',
+        body: (p, s, w) => `这一局，它落在了${s.name}里。你浇过几次水，风把水带走了。它没有等到那个“隐秘的泉源”。`,
+        end: '有些手举得再高，也够不到雨。'
+      },
+      wet: {
+        title: '它的根，泡在了自己不需要的水里。',
+        quote: '流沙河写仙人掌：“她不想用鲜花向主人献媚，遍身披上刺刀。”',
+        body: (p, s, w) => `仙人掌的根要的是空隙，不是水。这一局，${s.name}把水留住了，根没有呼吸的地方。`,
+        end: '它扛得住荒漠。扛不住太满的好意。'
+      },
+      frozen: {
+        title: '它撑过了干旱，没撑过这场冷。',
+        quote: '张香桐写它：“烈日严寒历尽，漫天风沙无情，行若无事，篱下自峥嵘。”',
+        body: (p, s, w) => `仙人掌本该耐得住严寒。但${w.name}太久了，久得超出了它能扛的时辰。`,
+        end: '它没有认输。它只是冻僵了。'
+      },
+      pest: {
+        title: '刺挡得住手，挡不住虫。',
+        quote: '',
+        body: (p, s, w) => `它浑身是刺，对虫子却没什么办法。小红点一点点多起来。你也许看见了，也许没有。`,
+        end: '硬的东西，有时恰恰最脆弱。'
+      },
+      hurt: {
+        title: '它被撞了一下，然后没缓过来。',
+        quote: '',
+        body: (p, s, w) => `仙人掌长得慢。生长慢的东西，受伤后也恢复得慢。这一局，${w.name}来得太突然。`,
+        end: '它不是不长。它只是来不及。'
+      },
+      wilt: {
+        title: '它活到了该放下的那天。',
+        quote: '雷倍里伏罗说，它“为天空戴上花冠”。',
+        body: (p, s, w) => `刺不是拒绝，是它在荒漠里学会的呼吸。它把水藏在身体深处，把叶子缩成针，把一切不必要的都减掉了。`,
+        end: '花冠摘下了，天空还在。'
+      }
+    },
+    succulent: {
+      dry: {
+        title: '它把水存起来，是为了走更远的路。这一局，路太短了。',
+        quote: '清代咏莲华多肉：“根寸未曾嫌壤瘠，形微何必惧霜皑。”',
+        body: (p, s, w) => `多肉把水藏在叶子里，藏得很深。但${s.name}干得太快，${w.name}来得太急，它攒下的那点，没能撑到下一场。`,
+        end: '它本可以走更远。'
+      },
+      wet: {
+        title: '它把水存在身体里，但这一局的水太多了。',
+        quote: '清代咏莲华多肉：“根寸未曾嫌壤瘠，形微何必惧霜皑。”',
+        body: (p, s, w) => `它不嫌土薄，不怕霜白。它怕的是水太多，根不能呼吸。你给的水，超过了它能承载的。`,
+        end: '它本来要的就不多。'
+      },
+      frozen: {
+        title: '它把叶子合起来，但没能合上这一场冷。',
+        quote: '',
+        body: (p, s, w) => `多肉在冷的时候会缩，会把自己收紧，像合上手掌。但${w.name}比它能收紧的更冷。`,
+        end: '它已经收得很紧了。'
+      },
+      pest: {
+        title: '虫子钻进叶缝里，它没办法赶走。',
+        quote: '',
+        body: (p, s, w) => `多肉的叶子层层叠叠，虫子最喜欢藏在缝里。小红点一点点多起来，一层一层往下咬。`,
+        end: '它太密了，密得藏住了伤。'
+      },
+      hurt: {
+        title: '它被打翻了一次，叶子掉了好几片。',
+        quote: '',
+        body: (p, s, w) => `多肉的叶子是它攒了很久的水。掉一片，少一份。这一局，${w.name}来得太突然。`,
+        end: '它还能长，只是慢。'
+      },
+      wilt: {
+        title: '它慢慢瘦下去了，像用尽了最后一滴水。',
+        quote: '庄周说，古有大树，三千岁为春，三千岁为秋。',
+        body: (p, s, w) => `枯萎的样子很安静。叶片从外向内一层层变薄，像一个人把藏了很久的话，一句一句说完了。`,
+        end: '多肉的时间，和你的不一样。'
+      }
+    },
+    mother: {
+      dry: {
+        title: '它叫不死鸟，但这一局它还是走了。',
+        quote: '',
+        body: (p, s, w) => `它本可以在砖缝里、在水泥的裂口里、在任何没人照顾的地方活下去。这一局，它落在了你的盆里。盆太宽，土太肥，水太勤。`,
+        end: '不死鸟不是不会死。它只是每次都换一种方式回来。这一次，它还没有回来。'
+      },
+      wet: {
+        title: '它要的是一道窄缝，你给的是一个宽盆。',
+        quote: '',
+        body: (p, s, w) => `不死鸟在贫瘠的地方活得最好。${s.name}把水留住了，根泡在里面，没能喘上气。`,
+        end: '给得太多，也是一种旱。'
+      },
+      frozen: {
+        title: '它叫不死鸟，但冷是它不认识的。',
+        quote: '《庄子·秋水》：“夏虫不可以语于冰者，笃于时也。”',
+        body: (p, s, w) => `它生在暖的地方，从没见过雪。这一局的${w.name}，超出了它身体里记得的所有季节。`,
+        end: '有些生命，和冷没有打过交道。'
+      },
+      pest: {
+        title: '它的叶缘长了那么多小芽，虫子也喜欢。',
+        quote: '',
+        body: (p, s, w) => `不死鸟的叶缘上都是小芽，每一颗都是一条命。虫子来了，也喜欢这里。小芽一颗一颗被咬掉。`,
+        end: '生的地方，也是被吃的地方。'
+      },
+      hurt: {
+        title: '它的叶子被碰断了一角，小芽跟着落下去了。',
+        quote: '',
+        body: (p, s, w) => `不死鸟靠叶缘繁殖，叶缘断了，这一条线上的小芽就都掉了。这一局，${w.name}来得太急。`,
+        end: '它还会长的。只是这一批，没能落地。'
+      },
+      wilt: {
+        title: '它把叶缘上的小芽都放下了。',
+        quote: '《庄子·秋水》：“夏虫不可以语于冰者，笃于时也。”',
+        body: (p, s, w) => `枯萎的时候，最先干的是那些小芽。一颗一颗地缩小，变褐，落下。像母亲终于松开了手。`,
+        end: '它没有不死。它只是把“不死”交给了下一颗种子。'
+      }
+    },
+    rose: {
+      dry: {
+        title: '它开过。然后停了。',
+        quote: '苏轼写月季：“花落花开无间断，春来春去不相关。”',
+        body: (p, s, w) => `月季本该“无日不春风”。但这一局，土干了，水断了，天也没有帮忙。`,
+        end: '“无日不春风”是它的天性，不是它的义务。'
+      },
+      wet: {
+        title: '它喜欢水，但不喜欢泡在水里。',
+        quote: '杨万里写它：“只道花无十日红，此花无日不春风。”',
+        body: (p, s, w) => `月季喜湿，但根不能一直泡着。${s.name}把水留得太久了，根闷住了。`,
+        end: '喜欢，和淹着，是两回事。'
+      },
+      frozen: {
+        title: '它在冬天里开过，但没开过这一场冬。',
+        quote: '',
+        body: (p, s, w) => `月季怕的不是冷，是冷太久，根又太湿。这一局的${w.name}两样都占了。`,
+        end: '它本该等到化开的。'
+      },
+      pest: {
+        title: '月季最招虫。这一局，虫来得早了一点。',
+        quote: '',
+        body: (p, s, w) => `月季的嫩叶和花苞都是虫子喜欢的。小红点一点点多起来，你没有来得及挪走它。`,
+        end: '有些事，早一点就好。'
+      },
+      hurt: {
+        title: '它的枝条被碰断了，花苞跟着掉了。',
+        quote: '韩琦赞它：“何以此花荣艳足，四时常放浅深红。”',
+        body: (p, s, w) => `月季的枝条是它攒了一季的力气。断一截，少一截。这一局，${w.name}来得太急。`,
+        end: '它能再长。只是这一朵，看不到了。'
+      },
+      wilt: {
+        title: '它把最后一朵花开完了。',
+        quote: '韩琦赞它：“何以此花荣艳足，四时常放浅深红。”',
+        body: (p, s, w) => `一朵开了，落了，另一朵再开。你陪的是这一朵。`,
+        end: '它开过了。这一年，它占过了。'
+      }
+    },
+    orchid: {
+      dry: {
+        title: '它等的不是水，是一场幽谷里的雨。',
+        quote: '孔子说：“芝兰生幽谷，不以无人而不芳。”',
+        body: (p, s, w) => `兰花的根要的是潮而不湿。这一局，${s.name}干得太快，它还没来得及吸水，土就空了。`,
+        end: '它不是要得多。它只是要得慢。'
+      },
+      wet: {
+        title: '它生在幽谷里，这一局却没能等到幽谷。',
+        quote: '孔子说：“芝兰生幽谷，不以无人而不芳。”',
+        body: (p, s, w) => `兰花不为了谁而香。这一局的土太闷，根没有喘气的地方。它没有改节，只是没有力气了。`,
+        end: '它的香还在。只是闻不到了。'
+      },
+      frozen: {
+        title: '它记的是幽谷的风，不记得什么是冻。',
+        quote: '屈原《离骚》以兰自比：“虽九死其犹未悔。”',
+        body: (p, s, w) => `兰花耐得住静，耐不住冻。${w.name}把它的叶子一点点收紧，收成了一根线。`,
+        end: '它没有悔。它只是太冷了。'
+      },
+      pest: {
+        title: '兰花的根甜，虫也知道。',
+        quote: '',
+        body: (p, s, w) => `兰花生长慢，虫来也慢，但每一次啃咬都比别的植物更重。这一局，小红点一点点多起来。`,
+        end: '慢的东西，伤也留得久。'
+      },
+      hurt: {
+        title: '它的花剑弯了，是被碰的。',
+        quote: '',
+        body: (p, s, w) => `兰花的花剑是它最花心思的部分。弯一次，要缓很久。这一局，${w.name}让它来不及缓。`,
+        end: '它的香还留着，只是头低了。'
+      },
+      wilt: {
+        title: '它把香气收回了根里。',
+        quote: '孔子叫它“王者之香”。',
+        body: (p, s, w) => `枯萎的样子，是香气一点一点地淡下去。不是消失，是收回。`,
+        end: '王者也有退位的时候。退位不是失败。'
+      }
+    },
+    bougainvillea: {
+      dry: {
+        title: '它没有等到花期。',
+        quote: '舒婷写三角梅：“最有限的营养 / 却献出了最丰富的自己。”',
+        body: (p, s, w) => `它最擅长的事，就是在最差的条件里开出最烈的花。但这一局的条件，差过了它能承受的极限。`,
+        end: '它献出了自己能献的。剩下的，不在它手里。'
+      },
+      wet: {
+        title: '它怕的是涝，不是旱。',
+        quote: '舒婷说它：“不拘墙头、路旁，无论草坡、石隙。”',
+        body: (p, s, w) => `三角梅最能吃旱，最怕泡根。${s.name}把水留得太久，它攒了一个季节的劲，一下子泄了。`,
+        end: '它能扛风，扛不住泡。'
+      },
+      frozen: {
+        title: '它生在南方，不认识雪。',
+        quote: '',
+        body: (p, s, w) => `三角梅是暖地的花。${w.name}对它是陌生的、陌生得让人发懵。`,
+        end: '它不是不坚强。它只是没在这里生活过。'
+      },
+      pest: {
+        title: '它的叶子薄，虫一咬就透。',
+        quote: '',
+        body: (p, s, w) => `三角梅的叶子是它的花。虫子咬的不是叶子，是它开出来的一整片红。`,
+        end: '它献出去的红，被吃掉了。'
+      },
+      hurt: {
+        title: '它被剪了一刀，枝条掉了下来。',
+        quote: '舒婷写它：“最有限的营养 / 却献出了最丰富的自己。”',
+        body: (p, s, w) => `三角梅长得快，枝条也脆。这一局，${w.name}来得太突然，它的枝条没撑住。`,
+        end: '它还能再长。只是这一根，到头了。'
+      },
+      wilt: {
+        title: '它把自己开完了。',
+        quote: '舒婷说，想起它，“眼光便柔和如梦 / 心，不知是悲是喜”。',
+        body: (p, s, w) => `枯萎的时候，颜色会慢慢褪成同一种褐。像一个人终于不再区分“我该是什么”和“我本来是什么”。`,
+        end: '你可以不知道。'
+      }
+    },
+    plum: {
+      dry: {
+        title: '它熬过了冷，没熬过干。',
+        quote: '王安石写梅花：“墙角数枝梅，凌寒独自开。”',
+        body: (p, s, w) => `梅花耐寒，耐旱的功夫却差一些。${s.name}干得太快，它攒的那点水，撑不到下一场。`,
+        end: '它挺过了最难的那一关。只是这一关，更早地来了。'
+      },
+      wet: {
+        title: '它怕的不是雪，是湿。',
+        quote: '',
+        body: (p, s, w) => `梅花凌寒开，但根不能一直泡在水里。${s.name}把水留得太久，它没输给冷，输给了湿。`,
+        end: '它熬得过冬天。只是这一局，冬天换了一种形状。'
+      },
+      frozen: {
+        title: '凌寒独自开的那一枝，没有等到春天。',
+        quote: '王安石写梅花：“墙角数枝梅，凌寒独自开。”',
+        body: (p, s, w) => `它本不怕冷。它怕的是冷太久，而根又太湿。这一局它熬过了寒，没熬过湿。`,
+        end: '暗香还在，枝已经枯了。'
+      },
+      pest: {
+        title: '它的香，虫子也闻到了。',
+        quote: '林逋写它：“疏影横斜水清浅，暗香浮动月黄昏。”',
+        body: (p, s, w) => `梅花的香很淡，虫却不怕。小红点一点点多起来，在枝上，在花苞里。`,
+        end: '暗香还在，只是被咬破了。'
+      },
+      hurt: {
+        title: '它的一枝被折了。',
+        quote: '',
+        body: (p, s, w) => `梅花的美，在于疏。折一枝，少一枝。这一局，${w.name}来得太急。`,
+        end: '疏影少了一半。暗香还在。'
+      },
+      wilt: {
+        title: '它把春天让出去了。',
+        quote: '禅宗有句：“归来笑拈梅花嗅，春在枝头已十分。”',
+        body: (p, s, w) => `梅花是报春的。它在最冷的时候开，开完，春天就来了。`,
+        end: '春已经到了。它把春送到了，就可以走了。'
+      }
+    },
+    iris: {
+      dry: {
+        title: '蝴蝶没有飞起来。',
+        quote: '清代叶申芗咏鸢尾：“胡蝶，胡蝶 / 紫艳翠茎绿叶 / 翩翩对舞风轻。”',
+        body: (p, s, w) => `鸢尾被古人看成蝴蝶。这一局的蝴蝶，还没有来得及飞，就合上了翅膀。`,
+        end: '梦还没有醒。'
+      },
+      wet: {
+        title: '蝴蝶落在了水里。',
+        quote: '寇准写它：“粉融轻翅攒花蕊，疑是寻芳未去时。”',
+        body: (p, s, w) => `鸢尾喜湿，但根不能淹着。${s.name}留水太久，花剑沉下去了。`,
+        end: '它以为还能去寻芳。去不成了。'
+      },
+      frozen: {
+        title: '蝴蝶扛不住冷。',
+        quote: '',
+        body: (p, s, w) => `鸢尾的花瓣薄，像蝴蝶的翅膀。${w.name}一来，翅膀就先僵了。`,
+        end: '翅膀还张着，飞不起来了。'
+      },
+      pest: {
+        title: '虫子爬进了花心里。',
+        quote: '',
+        body: (p, s, w) => `鸢尾的花心是它藏了最久的地方。虫子从那里进去，一路往里啃。`,
+        end: '最漂亮的地方，也最藏不住。'
+      },
+      hurt: {
+        title: '它的旗瓣被碰掉了一片。',
+        quote: '李觏说它：“周庄有梦何曾觉。”',
+        body: (p, s, w) => `鸢尾的花被古人看成蝴蝶。缺一片旗瓣，就少一半飞的样子。`,
+        end: '梦还没有醒，翅膀已经缺了。'
+      },
+      wilt: {
+        title: '蝴蝶停下来了。',
+        quote: '舒婷写过：“我之于你 / 一如深紫色的鸢尾花之于这个春季。”',
+        body: (p, s, w) => `枯萎的时候，花瓣会卷起来，像一只收拢翅膀的蝴蝶。它不飞了。它停在了一根茎上。`,
+        end: '春季会走。鸢尾也会。但深紫色留在了那里。'
+      }
+    }
+  };
+
+  // ===== 状态 =====
+  let current, soilKey, weatherKey;
+  function freshState() {
+    return {
+      water: 50, growth: 0, hurt: false,
+      wilted: false, dead: false,
+      bloomSeconds: 0,
+      stressDry: 0, stressWet: 0, stressFrozen: 0, stressPest: 0, stressHurt: 0,
+      deathCause: null
+    };
+  }
+  let state = freshState();
+  let gameStarted = false;
+  let timer = null;
+
+  const potWrap = document.getElementById('potWrap');
+  const pname = document.getElementById('pname');
+  const envBox = document.getElementById('env');
+  const fxBox = document.getElementById('fx');
+  const pestDots = document.getElementById('pestDots');
+  const whisper = document.getElementById('whisper');
+
+  const endModal = document.getElementById('endModal');
+  const endTitle = document.getElementById('endTitle');
+  const endQuote = document.getElementById('endQuote');
+  const endBody = document.getElementById('endBody');
+  const endEnd = document.getElementById('endEnd');
+
+  function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function soilMatch() {
+    const p = plants[current];
+    if (p.soils.includes(soilKey)) return 'good';
+    if (p.soils.length === 4) return 'ok';
+    if (soilKey === 'clay' && p.comfort[1] <= 55) return 'bad';
+    return 'ok';
+  }
+
+  function buildFx() {
+    const w = weathers[weatherKey];
+    fxBox.innerHTML = '';
+    pestDots.style.display = 'none';
+    let count = 0, cls = '';
+    if (w.rain) { count = w.rain; cls = 'rain'; }
+    else if (w.snow) { count = w.snow; cls = 'snow'; }
+    else if (w.hail) { count = w.hail; cls = 'hail'; }
+    else if (w.storm) { count = w.storm; cls = 'storm'; }
+    else if (w.pest) {
+      pestDots.style.display = 'block';
+      for (let i = 0; i < 4; i++) {
+        const d = document.createElement('span');
+        d.style.left = (38 + Math.random() * 24) + '%';
+        d.style.top = (35 + Math.random() * 35) + '%';
+        pestDots.appendChild(d);
+      }
+    }
+    if (cls) {
+      fxBox.className = 'fx ' + cls;
+      for (let i = 0; i < count; i++) {
+        const s = document.createElement('span');
+        s.style.left = Math.random() * 100 + '%';
+        s.style.animationDelay = (Math.random() * 1.5) + 's';
+        s.style.animationDuration = (0.5 + Math.random() * 0.8) + 's';
+        fxBox.appendChild(s);
+      }
+    }
+  }
+
+  function newRound() {
+    current = rand(Object.keys(plants));
+    soilKey = rand(Object.keys(soils));
+    weatherKey = rand(Object.keys(weathers));
+    state = freshState();
+    document.body.className = 'weather-' + weatherKey;
+    buildFx();
+    endModal.classList.remove('show');
+    render();
+  }
+
+  function render() {
+    const p = plants[current];
+    const w = weathers[weatherKey];
+    const s = soils[soilKey];
+    const m = soilMatch();
+
+    pname.textContent = p.name;
+    envBox.innerHTML = `
+      <div class="env-chip">植物 <b>${p.name}</b></div>
+      <div class="env-chip">土壤 <b>${s.name}</b></div>
+      <div class="env-chip">${w.ico} <b>${w.name}</b></div>
+    `;
+
+    let body;
+    if (state.dead) body = p.mature;
+    else if (state.wilted) body = p.mature;
+    else if (state.growth < 10) body = seedStage;
+    else if (state.growth < 30) body = sprout;
+    else if (state.growth < 100) body = p.mature;
+    else body = p.bloom;
+    potWrap.innerHTML = `<svg viewBox="0 0 200 210">${pot}${body}</svg>`;
+
+    potWrap.classList.remove('thirsty','droopy','soil-ok','soil-bad','frost','hurt','bloom','sway','wilt','dead');
+    const [lo, hi] = p.comfort;
+    if (state.dead) potWrap.classList.add('dead');
+    else if (state.wilted) potWrap.classList.add('wilt');
+    else {
+      if (state.water < lo * 0.6) potWrap.classList.add('thirsty');
+      if (state.water > hi + 15) potWrap.classList.add('droopy');
+      if (m === 'ok') potWrap.classList.add('soil-ok');
+      if (m === 'bad') potWrap.classList.add('soil-bad');
+      if (w.frozen) potWrap.classList.add('frost');
+      if (state.hurt || w.hurt) potWrap.classList.add('hurt');
+      if (state.growth >= 100 && !state.wilted) potWrap.classList.add('bloom');
+    }
+  }
+
+  const whispers = {
+    thirsty: ['它有点蔫。', '叶子垂下来了。'],
+    flooded: ['它好像喝多了。', '土还湿着。'],
+    watered: ['叶片轻轻晃了一下。', '喝到水了。'],
+    bloomed: ['它开花了。', '你把它养到开花了。'],
+    cold: ['它缩着。', '外面太冷了。'],
+    ok: ['刚刚好。', '它舒展着。']
+  };
+  function say(type) {
+    whisper.textContent = '“' + whispers[type][Math.floor(Math.random() * whispers[type].length)] + '”';
+    whisper.classList.remove('show');
+    void whisper.offsetWidth;
+    whisper.classList.add('show');
+  }
+
+  // ===== 结算弹窗（改造：优先 deathStories） =====
+  function showEnd(cause) {
+    state.deathCause = cause;
+    const p = plants[current];
+    const s = soils[soilKey];
+    const w = weathers[weatherKey];
+
+    let title, quote, bodyText, endText;
+    const story = deathStories[current] && deathStories[current][cause];
+
+    if (story) {
+      title = story.title;
+      quote = story.quote || '';
+      bodyText = story.body(p, s, w);
+      endText = story.end;
+    } else {
+      // 兜底
+      title = '这一局，结束了。';
+      quote = '';
+      bodyText = `这一株${p.name}，落在了${s.name}里，遇上了${w.name}。`;
+      endText = '换一颗种子吧。';
+    }
+
+    endTitle.textContent = title;
+    if (quote) {
+      // 把诗句里的 / 换成真正的换行，保留原诗分行
+      endQuote.textContent = quote.replace(/\s*\/\s*/g, '\n');
+      endQuote.style.display = 'block';
+    } else {
+      endQuote.style.display = 'none';
+    }
+    endBody.textContent = bodyText;
+    endEnd.textContent = endText;
+
+    setTimeout(() => endModal.classList.add('show'), 600);
+  }
+
+  // ===== 按钮 =====
+  document.getElementById('waterBtn').addEventListener('click', () => {
+    if (state.dead) return;
+    const w = weathers[weatherKey];
+    if (w.frozen) { say('cold'); return; }
+    state.water = Math.min(100, state.water + 22);
+    potWrap.classList.remove('sway');
+    void potWrap.offsetWidth;
+    potWrap.classList.add('sway');
+    const p = plants[current];
+    const [lo, hi] = p.comfort;
+    if (state.water > hi + 15) say('flooded');
+    else if (state.growth >= 100) say('bloomed');
+    else say('watered');
+    render();
+  });
+
+  document.getElementById('seedBtn').addEventListener('click', () => newRound());
+  document.getElementById('endAgainBtn').addEventListener('click', () => newRound());
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    state = freshState();
+    weatherKey = rand(Object.keys(weathers));
+    document.body.className = 'weather-' + weatherKey;
+    buildFx();
+    render();
+    say('ok');
+  });
+
+  // ===== 主循环 =====
+  function tick() {
+    if (!gameStarted) return;
+    if (state.dead) return;
+    const p = plants[current];
+    const w = weathers[weatherKey];
+    const s = soils[soilKey];
+
+    let evapo = p.evapo * w.evapo * s.evapo;
+    state.water = Math.max(0, state.water - evapo);
+
+    if (w.rain) state.water = Math.min(100, state.water + 0.8);
+    if (w.storm) state.water = Math.min(100, state.water + 1.5);
+    if (w.frozen) state.water = Math.max(0, state.water - 0.05);
+    if (w.hurtChance && Math.random() < 0.02) state.hurt = true;
+
+    const [lo, hi] = p.comfort;
+    const inComfort = state.water >= lo && state.water <= hi;
+    const m = soilMatch();
+    let rate = 0;
+    if (inComfort && !w.frozen && !w.pest && !state.hurt && !w.hurt && !state.wilted) {
+      if (m === 'good') rate = 0.8;
+      else if (m === 'bad') rate = 0.15;
+      else rate = 0.4;
+    }
+    state.growth = Math.min(100, state.growth + rate);
+
+    if (state.growth >= 100 && !state.wilted) {
+      state.bloomSeconds++;
+      if (state.bloomSeconds > 40) state.wilted = true;
+    }
+
+    // 压力累积
+    if (state.water <= 0) state.stressDry++; else state.stressDry = 0;
+    // 水过多：超过舒适上限 20 点就累积涝压（不要硬卡 100，否则蒸发一下就掉下来）
+    const [_lo, _hi] = p.comfort;
+    if (state.water >= _hi + 20) state.stressWet++; else state.stressWet = 0;
+    if (w.frozen) state.stressFrozen++; else state.stressFrozen = 0;
+    if (w.pest) state.stressPest++; else state.stressPest = 0;
+    if (state.hurt || w.hurt) state.stressHurt++; else state.stressHurt = 0;
+
+    const dryLimit = p.comfort[0] <= 30 ? 14 : 7;
+    const wetLimit = p.comfort[1] >= 80 ? 14 : 8;
+
+    if (state.stressDry > dryLimit) { state.dead = true; showEnd('dry'); }
+    else if (state.stressWet > wetLimit) { state.dead = true; showEnd('wet'); }
+    else if (state.stressFrozen > 15) { state.dead = true; showEnd('frozen'); }
+    else if (state.stressPest > 15) { state.dead = true; showEnd('pest'); }
+    else if (state.stressHurt > 20) { state.dead = true; showEnd('hurt'); }
+
+    render();
+  }
+
+  // ===== 首页与 Tips 交互 =====
+  const splash = document.getElementById('splash');
+  const tipsModal = document.getElementById('tipsModal');
+
+  // 首页入场动画
+  window.addEventListener('load', () => {
+    const items = document.querySelectorAll('.splash-item');
+    items.forEach((el, i) => {
+      setTimeout(() => el.classList.add('in'), 200 + i * 300);
+    });
+  });
+
+  document.getElementById('startBtn').addEventListener('click', () => {
+    splash.classList.add('hidden');
+    gameStarted = true;
+    newRound();
+    if (timer) clearInterval(timer);
+    timer = setInterval(tick, 1000);
+  });
+
+  document.getElementById('tipsBtn').addEventListener('click', () => {
+    tipsModal.classList.add('show');
+  });
+  document.getElementById('gotBtn').addEventListener('click', () => {
+    tipsModal.classList.remove('show');
+  });
+  tipsModal.addEventListener('click', (e) => {
+    if (e.target === tipsModal) tipsModal.classList.remove('show');
+  });
+</script>
+</body>
+</html>
